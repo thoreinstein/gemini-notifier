@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "name": "notify-user",
+            "type": "command",
+            "command": "node $GEMINI_PROJECT_DIR/src/notify.js",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
