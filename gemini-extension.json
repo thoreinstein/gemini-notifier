@@ -1,0 +1,5 @@
+{
+  "name": "gemini-notifier",
+  "version": "1.0.0",
+  "description": "System desktop notifications for Gemini CLI agent events."
+}
