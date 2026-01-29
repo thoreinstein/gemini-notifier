@@ -7,7 +7,7 @@
           {
             "name": "notify-user",
             "type": "command",
-            "command": "node $GEMINI_EXTENSION_DIR/src/notify.js",
+            "command": "node ${extensionPath}/src/notify.js",
             "timeout": 5000
           }
         ]
