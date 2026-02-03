@@ -69,6 +69,8 @@ async function tryOSNotification(title, message) {
     return notifyMacOS(title, message);
   } else if (platform === "linux") {
     return notifyLinux(title, message);
+  } else if (platform === "win32") {
+    return notifyWindows(title, message);
   }
 
   return false;
@@ -101,9 +103,6 @@ function notifyLinux(title, message) {
       if (err) return resolve(false);
 
       // Simple execution
-      // Note: In a real shell script we'd be more careful with escaping,
-      // but exec handles some of it if we are careful.
-      // Ideally we'd use spawn but exec is shorter for this prototype.
       const safeTitle = title.replace(/"/g, '\\"');
       const safeMessage = message.replace(/"/g, '\\"');
 
@@ -111,6 +110,31 @@ function notifyLinux(title, message) {
         if (err) resolve(false);
         else resolve(true);
       });
+    });
+  });
+}
+
+function notifyWindows(title, message) {
+  return new Promise((resolve) => {
+    // Use PowerShell for Windows notification
+    const safeTitle = title.replace(/'/g, "''");
+    const safeMessage = message.replace(/'/g, "''");
+
+    const psCommand = `
+      [void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');
+      $notification = New-Object System.Windows.Forms.NotifyIcon;
+      $notification.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Get-Process -id $pid).Path);
+      $notification.BalloonTipTitle = '${safeTitle}';
+      $notification.BalloonTipText = '${safeMessage}';
+      $notification.Visible = $true;
+      $notification.ShowBalloonTip(5000);
+      Start-Sleep -Seconds 1;
+      $notification.Dispose();
+    `.replace(/\n/g, "");
+
+    exec(`powershell -Command "${psCommand}"`, (err) => {
+      if (err) resolve(false);
+      else resolve(true);
     });
   });
 }
