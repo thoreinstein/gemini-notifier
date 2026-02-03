@@ -1,45 +1,24 @@
-# Gemini Notifier Extension
+# Gemini Notifier
 
-A Gemini CLI extension that provides desktop system notifications when the agent requires attention (e.g., waiting for tool permissions).
+系统桌面通知扩展，用于 Gemini CLI 代理事件提醒。
 
-## Features
+## 功能
+- 当 Gemini CLI 请求工具执行权限或有重要通知时，在桌面弹出提示。
+- 支持 Windows (PowerShell), macOS (osascript) 和 Linux (notify-send)。
+- 支持支持 OSC 9 协议的终端（如 VSCode, iTerm2 等）。
 
-- **Native Terminal Notifications**: Supports modern terminals (Ghostty, iTerm2, Kitty, VSCode) via OSC escape codes.
-- **OS Fallback**: Falls back to system-level notifications (`osascript` on macOS, `notify-send` on Linux) if the terminal is not supported.
-- **Zero Config**: Works out of the box with the Gemini CLI `Notification` hook.
+## 安装
+1. 下载并解压本项目。
+2. 在项目根目录下运行：
+   ```powershell
+   gemini install .
+   ```
+   *注意：如果 Windows 提示脚本运行受限，请使用：*
+   ```powershell
+   powershell -ExecutionPolicy Bypass -Command "gemini install ."
+   ```
 
-## Supported Environments
-
-### Terminals (Native Integration)
-The extension attempts to send native terminal notifications (OSC 9) for the following:
-- Ghostty
-- iTerm2
-- Kitty
-- VS Code Terminal
-- Apple Terminal
-
-### Operating Systems (Fallback)
-If the terminal is not detected or supported, the extension attempts to use OS utilities:
-
-- **macOS**: Uses `osascript` (built-in).
-- **Linux**: Uses `notify-send`.
-  - **Requirement**: Ensure `libnotify-bin` (Debian/Ubuntu) or `libnotify` (Arch/Fedora) is installed.
-  - Test with: `notify-send "Test" "Message"`
-
-## Installation
-
-This extension is typically installed via the Gemini CLI extensions manager.
-
-```bash
-gemini extensions install https://github.com/thoreinstein/gemini-notifier
-# OR linked locally
-gemini extensions link .
-```
-
-## How it Works
-
-1. The extension registers a **Notification** hook with the Gemini CLI.
-2. When the CLI emits a `ToolPermission` event (Agent waiting for user), the hook triggers.
-3. The script (`src/notify.js`) checks your `TERM_PROGRAM` environment variable.
-4. If a supported terminal is found, it sends an escape code to stdout.
-5. If not, it attempts to spawn a system notification process (`osascript` or `notify-send`).
+## 核心文件
+- `gemini-extension.json`: 插件元数据。
+- `hooks/hooks.json`: 定义了通知触发钩子。
+- `src/notify.js`: 跨平台通知逻辑。
