@@ -21,6 +21,7 @@ The extension attempts to send native terminal notifications (OSC 9) for the fol
 ### Operating Systems (Fallback)
 If the terminal is not detected or supported, the extension attempts to use OS utilities:
 
+- **Android (Termux)**: Uses `termux-notification` (Requires `termux-api` package).
 - **macOS**: Uses `osascript` (built-in).
 - **Linux**: Uses `notify-send`.
   - **Requirement**: Ensure `libnotify-bin` (Debian/Ubuntu) or `libnotify` (Arch/Fedora) is installed.
