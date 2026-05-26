@@ -11,7 +11,7 @@ let data;
 try {
   data = JSON.parse(payload);
 } catch (e) {
-  // Fail silently or log to debug
+  // Fail silently
   process.exit(0);
 }
 
@@ -22,10 +22,6 @@ if (data.notification_type !== "ToolPermission") {
 
 const message = data.message || "Gemini Agent requires attention";
 const title = "Gemini CLI";
-
-// Orchestration Logic
-// 1. Try Terminal Native
-// 2. Try OS Native (Fallback)
 
 async function notify() {
   const terminalSuccess = await tryTerminalNotification(title, message);
@@ -47,14 +43,11 @@ const ALLOWLISTED_TERMINALS = [
 async function tryTerminalNotification(title, message) {
   const termProgram = (process.env.TERM_PROGRAM || "").toLowerCase();
 
-  // Check if we are in an allowlisted terminal
   const isSupported = ALLOWLISTED_TERMINALS.some((term) =>
     termProgram.includes(term),
   );
 
   if (isSupported) {
-    // OSC 9: \x1b]9;{message}\x07 (iTerm2 notification protocol)
-    // We send it to stdout. The terminal emulator should intercept it.
     process.stdout.write(`\x1b]9;${message}\x07`);
     return true;
   }
@@ -67,20 +60,40 @@ async function tryOSNotification(title, message) {
 
   if (platform === "darwin") {
     return notifyMacOS(title, message);
-  } else if (platform === "linux") {
+  } else if (platform === "linux" || platform === "android") {
+    // Try Termux first, then standard Linux
+    const isTermux = await notifyTermux(title, message);
+    if (isTermux) return true;
     return notifyLinux(title, message);
   }
 
   return false;
 }
 
+function notifyTermux(title, message) {
+  return new Promise((resolve) => {
+    exec("which termux-notification", (err) => {
+      if (err) return resolve(false);
+
+      const safeTitle = title.replace(/"/g, '\\"');
+      const safeMessage = message.replace(/"/g, '\\"');
+
+      exec(
+        `termux-notification --title "${safeTitle}" --content "${safeMessage}"`,
+        (err) => {
+          if (err) resolve(false);
+          else resolve(true);
+        },
+      );
+    });
+  });
+}
+
 function notifyMacOS(title, message) {
   return new Promise((resolve) => {
-    // Check for osascript
     exec("which osascript", (err) => {
       if (err) return resolve(false);
 
-      // Escape quotes for AppleScript
       const safeTitle = title.replace(/"/g, '\\"');
       const safeMessage = message.replace(/"/g, '\\"');
 
@@ -96,14 +109,9 @@ function notifyMacOS(title, message) {
 
 function notifyLinux(title, message) {
   return new Promise((resolve) => {
-    // Check for notify-send
     exec("which notify-send", (err) => {
       if (err) return resolve(false);
 
-      // Simple execution
-      // Note: In a real shell script we'd be more careful with escaping,
-      // but exec handles some of it if we are careful.
-      // Ideally we'd use spawn but exec is shorter for this prototype.
       const safeTitle = title.replace(/"/g, '\\"');
       const safeMessage = message.replace(/"/g, '\\"');
 
